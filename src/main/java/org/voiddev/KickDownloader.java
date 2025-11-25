@@ -20,45 +20,19 @@ import org.voiddev.api.KickScraper;
 
 public class KickDownloader
 {
-	static String VODSPOT = "";
+	private String channelName;
+	private int count;
+	private String directory;
 
-	public static void main(String[] args)
+	public KickDownloader(String channelName, int count, String directory)
 	{
-		String channelName = "";
-		int count = 1;
-		if (args.length == 3)
-		{
-			channelName = args[0];
-			VODSPOT = args[1];
-			if (!VODSPOT.endsWith(File.separator))
-			{
-				VODSPOT = VODSPOT + File.separator;
-			}
-			try
-			{
-				count = Integer.parseInt(args[2]);
-			}
-			catch (Exception e)
-			{
-				System.out.println("The third argument must be a number" + args[2]);
-			}
-		}
-		else
-		{
-			System.out.println("Need 3 args: channel filelocation count");
-			return;
-		}
+		this.channelName = channelName;
+		this.count = count;
+		this.directory = directory;
+	}
 
-		if (count < 1 || count > 10)
-		{
-			System.out.println("The third argument must be a number between 1 and 10");
-		}
-
-		if (!new File(VODSPOT).exists())
-		{
-			new File(VODSPOT).mkdirs();
-		}
-
+	public void runDownload()
+	{
 		// Playwright is Microsoft's pupeteer, some type of browser tool
 		try (Playwright playwright = Playwright.create())
 		{
@@ -109,7 +83,7 @@ public class KickDownloader
 						{
 							String videoTitle = title + "_" + obj.get("start_time").getAsString();
 							videoTitle = videoTitle.replaceAll("[^a-zA-Z0-9._-]", "_");
-							Downloader downloader = new Downloader(source, id, VODSPOT, videoTitle);
+							Downloader downloader = new Downloader(source, id, directory, videoTitle);
 
 							boolean success = downloader.download();
 							if (success)
@@ -159,17 +133,17 @@ public class KickDownloader
 	}
 
 	// returns the formatted URL from a provided kick username
-	private static String getChannelURL(String channelName)
+	private String getChannelURL(String channelName)
 	{
 		return "https://kick.com/api/v2/channels/" + channelName + "/videos?cursor=0&sort=date&time=all";
 	}
 
 	// read from a file to recall if a vod id has been processed already
-	private static boolean idRan(String id)
+	private boolean idRan(String id)
 	{
 		try
 		{
-			String fileContent = Files.readString(Path.of(VODSPOT + "processedVideos.txt"));
+			String fileContent = Files.readString(Path.of(directory + "processedVideos.txt"));
 			return fileContent.contains(id);
 		}
 		catch (Exception e)
@@ -179,11 +153,11 @@ public class KickDownloader
 	}
 
 	// write to a file to keep track of what file was already worked on
-	private synchronized static void updateFile(String id)
+	private synchronized void updateFile(String id)
 	{
 		try
 		{
-			FileWriter fileWriter = new FileWriter(VODSPOT + "processedVideos.txt", true);
+			FileWriter fileWriter = new FileWriter(directory + "processedVideos.txt", true);
 			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
 			bufferedWriter.write(id);
