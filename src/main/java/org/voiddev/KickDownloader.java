@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.voiddev.actions.Downloader;
 import org.voiddev.api.KickScraper;
@@ -33,12 +34,24 @@ public class KickDownloader
 			{
 				VODSPOT = VODSPOT + File.separator;
 			}
-			count = Integer.parseInt(args[2]);
+			try
+			{
+				count = Integer.parseInt(args[2]);
+			}
+			catch (Exception e)
+			{
+				System.out.println("The third argument must be a number" + args[2]);
+			}
 		}
 		else
 		{
-			System.out.println("Need 3 args: channel location count");
+			System.out.println("Need 3 args: channel filelocation count");
 			return;
+		}
+
+		if (count < 1 || count > 10)
+		{
+			System.out.println("The third argument must be a number between 1 and 10");
 		}
 
 		if (!new File(VODSPOT).exists())
@@ -85,38 +98,42 @@ public class KickDownloader
 				JsonObject obj = jsonArray.get(i).getAsJsonObject();
 
 				// async call the download on the vod
-					completableFutures.add(
-						CompletableFuture.runAsync(() -> {
+				completableFutures.add(
+					CompletableFuture.runAsync(() -> {
 
-							String title = obj.get("session_title").getAsString();
-							String source = obj.get("source").getAsString();
-							String id = obj.get("id").getAsString();
-							source = source.replace("hls/master.m3u8", "hls/720p30/playlist.m3u8");
-							try
+						String title = obj.get("session_title").getAsString();
+						String source = obj.get("source").getAsString();
+						String id = obj.get("id").getAsString();
+						source = source.replace("hls/master.m3u8", "hls/720p30/playlist.m3u8");
+						try
+						{
+							String videoTitle = title + "_" + obj.get("start_time").getAsString();
+							videoTitle = videoTitle.replaceAll("[^a-zA-Z0-9._-]", "_");
+							Downloader downloader = new Downloader(source, id, VODSPOT, videoTitle);
+
+							boolean success = downloader.download();
+							if (success)
 							{
-								String videoTitle = title + "_" + obj.get("start_time").getAsString();
-								videoTitle = videoTitle.replaceAll("[^a-zA-Z0-9._-]", "_");
-								videoTitle = VODSPOT + videoTitle + ".mp4";
-								Downloader downloader = new Downloader(source, videoTitle);
-								boolean success = downloader.download();
-								if (success)
+								updateFile(id);
+								System.out.println("Download success: " + id);
+								if (!downloader.cleanup())
 								{
-									updateFile(id);
-									System.out.println("Download success: " + id);
-								}
-								else
-								{
-									System.out.println("Download failed: " + id);
+									throw new RuntimeException("Failed to clean up downloader");
 								}
 							}
-							catch (Exception e)
+							else
 							{
-								System.out.println("Error downloading video: " + id);
-								System.out.println("Error: " + e.getMessage());
-								e.printStackTrace();
+								System.out.println("Download failed: " + id);
 							}
-						})
-					);
+						}
+						catch (Exception e)
+						{
+							System.out.println("Error downloading video: " + id);
+							System.out.println("Error: " + e.getMessage());
+							e.printStackTrace();
+						}
+					})
+				);
 
 			}
 			if (completableFutures.size() > 0)
@@ -173,7 +190,6 @@ public class KickDownloader
 			bufferedWriter.newLine(); // Writes a platform-specific new line character
 
 			bufferedWriter.close(); // Closes the buffered writer, which also closes the underlying FileWriter
-			System.out.println("Successfully wrote to the file with BufferedWriter.");
 		}
 		catch (IOException e)
 		{
