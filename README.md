@@ -6,14 +6,14 @@ JDK 17 Required
 Build the fatjar or run the project from IntelliJ. 
 
 Inputs:
-kick channel name
-vod file location (no sapces)
-number of vods to get, between 1 and 10.
+-channel `kick channel name`
+-dir `directory location`
+-count `number of vods to do at the same time`
 
 Example build:
 ./gradlew fatJar
 
 Example run:
-`java -jar KickVODDL.jar xqc C:\vods\xqc 3`
+`java -jar KickVODDL.jar -channel xqc -dir C:\vods\xqc -count 3`
 
 It does download the list of .ts files and combine them and then clean up, so it does take 2x the size of a VOD to produce one VOD.
