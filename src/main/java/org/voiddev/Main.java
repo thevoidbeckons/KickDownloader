@@ -1,48 +1,90 @@
 package org.voiddev;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class Main
 {
 
 	public static void main(String[] args)
 	{
-		String vodSpot = "";
-		String channelName = "";
+		// hard code kick as service for now
 		String service = "kick";
-		int count = 1;
-		if (args.length == 3)
+
+		ArrayList<String> channelNameAL = new ArrayList<>();
+		ArrayList<String> vodSpotAL = new ArrayList<>();
+		ArrayList<String> vodCountAL = new ArrayList<>();
+		ArrayList<String> destination = null;
+
+		for (String arg : args)
 		{
-//			service = args[0];
-			channelName = args[0];
-			vodSpot = args[1];
-			if (!vodSpot.endsWith(File.separator))
+			if ("-channel".equals(arg))
 			{
-				vodSpot = vodSpot + File.separator;
+				destination = channelNameAL;
 			}
-			try
+			else if ("-dir".equals(arg))
 			{
-				count = Integer.parseInt(args[2]);
+				destination = vodSpotAL;
 			}
-			catch (Exception e)
+			else if ("-count".equals(arg))
 			{
-				System.out.println("The third argument must be a number" + args[2]);
+				destination = vodCountAL;
+			}
+			else if (destination == null)
+			{
+				System.out.printf("Invalid argument: %s%n", arg);
+			}
+			else
+			{
+				destination.add(arg);
 			}
 		}
-		else
+		int count = 0;
+		String vodSpot;
+		if (vodCountAL.size() == 1)
 		{
-			System.out.println("Need 3 args: channel filelocation count");
+			try
+			{
+				count = Integer.parseInt(vodCountAL.get(0));
+			}
+			catch (NumberFormatException e)
+			{
+				System.out.printf("Invalid argument: '%s' has to be a number for -count", vodCountAL.get(0));
+				return;
+			}
+		}
+
+		if (vodCountAL.size() > 1)
+		{
+			System.out.print("Only have one value for -count");
 			return;
 		}
 
-		if (count < 1 || count > 10)
+		if (channelNameAL.isEmpty())
 		{
-			System.out.println("The third argument must be a number between 1 and 10");
+			System.out.println("Invalid argument: '-channel' has to be a list of channel names");
+			return;
 		}
 
+		if (vodSpotAL.size() != 1)
+		{
+			System.out.println("Invalid argument: '-dir' has to be a directory for vods to read/write to");
+			return;
+		}
+
+		vodSpot = vodSpotAL.get(0);
+		if (!vodSpot.endsWith(File.separator))
+		{
+			vodSpot += File.separator;
+		}
 		if (!new File(vodSpot).exists())
 		{
 			new File(vodSpot).mkdirs();
+		}
+		if (!new File(vodSpot).exists() || !new File(vodSpot).canWrite() || !new File(vodSpot).canRead() || !new File(vodSpot).isDirectory())
+		{
+			System.out.println("Invalid argument: '-dir' has to be a directory for vods to read/write to");
+			return;
 		}
 
 		if (service == null || service.length() == 0)
@@ -53,8 +95,11 @@ public class Main
 
 		if (service.equalsIgnoreCase("kick") || service.equalsIgnoreCase("k"))
 		{
-			KickDownloader kickDownloader = new KickDownloader(channelName, count, vodSpot);
-			kickDownloader.runDownload();
+			for (String channelName : channelNameAL)
+			{
+				KickDownloader kickDownloader = new KickDownloader(channelName, count, vodSpot);
+				kickDownloader.runDownload();
+			}
 		}
 
 		// TODO support other services

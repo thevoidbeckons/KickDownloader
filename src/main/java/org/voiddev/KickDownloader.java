@@ -41,23 +41,23 @@ public class KickDownloader
 			KickScraper kickScraper = new KickScraper(browser, new BrowserType.LaunchOptions().setHeadless(true));
 
 			// get scraped data
-			JsonArray jo = kickScraper.scrapeData(getChannelURL(channelName));
-			JsonArray jsonArray = new JsonArray();
+			JsonArray foundVods = kickScraper.scrapeData(getChannelURL(channelName));
+			JsonArray newVods = new JsonArray();
 
 			// loop through the vods
-			for (int i = 0; i < jo.size() && jsonArray.size() < count; i++)
+			for (int i = 0; i < foundVods.size() && (newVods.size() < count || count == 0); i++)
 			{
-				JsonObject obj = jo.get(i).getAsJsonObject();
+				JsonObject vodObject = foundVods.get(i).getAsJsonObject();
 
 				// skip live vods
-				if (obj.has("is_live") && !obj.get("is_live").getAsBoolean())
+				if (vodObject.has("is_live") && !vodObject.get("is_live").getAsBoolean())
 				{
-					String id = obj.get("id").getAsString();
+					String id = vodObject.get("id").getAsString();
 
 					// if the id of vod has ran before, skip it
 					if (!idRan(id))
 					{
-						jsonArray.add(obj);
+						newVods.add(vodObject);
 						System.out.println("Going to run on: " + id);
 					}
 				}
@@ -67,21 +67,21 @@ public class KickDownloader
 			ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
 
 			// loop through the found vods to process
-			for (int i = 0; i < jsonArray.size() && i < count; i++)
+			for (int i = 0; i < newVods.size(); i++)
 			{
-				JsonObject obj = jsonArray.get(i).getAsJsonObject();
+				JsonObject vodObject = newVods.get(i).getAsJsonObject();
 
 				// async call the download on the vod
 				completableFutures.add(
 					CompletableFuture.runAsync(() -> {
 
-						String title = obj.get("session_title").getAsString();
-						String source = obj.get("source").getAsString();
-						String id = obj.get("id").getAsString();
+						String title = vodObject.get("session_title").getAsString();
+						String source = vodObject.get("source").getAsString();
+						String id = vodObject.get("id").getAsString();
 						source = source.replace("hls/master.m3u8", "hls/720p30/playlist.m3u8");
 						try
 						{
-							String videoTitle = title + "_" + obj.get("start_time").getAsString();
+							String videoTitle = title + "_" + vodObject.get("start_time").getAsString();
 							videoTitle = videoTitle.replaceAll("[^a-zA-Z0-9._-]", "_");
 							Downloader downloader = new Downloader(source, id, directory, videoTitle);
 
