@@ -26,14 +26,14 @@ dependencies {
     implementation("com.microsoft.playwright:playwright:1.55.0")}
 
 application {
-    mainClass.set("org.voiddev.KickDownloader")
+    mainClass.set("org.voiddev.Main")
 }
 val fatJar = task("fatJar", type = Jar::class) {
     baseName = "${project.name}"
     manifest {
         attributes["Implementation-Title"] = "Gradle Jar File"
         attributes["Implementation-Version"] = version
-        attributes["Main-Class"] = "org.voiddev.KickDownloader"
+        attributes["Main-Class"] = "org.voiddev.Main"
     }
     from(configurations.runtimeClasspath.get().map({ if (it.isDirectory) it else zipTree(it) }))
     with(tasks.jar.get() as CopySpec)
