@@ -40,7 +40,7 @@ public class Main
 			}
 		}
 		int count = 0;
-		String vodSpot;
+		String vodSpot = "";
 		if (vodCountAL.size() == 1)
 		{
 			try
@@ -66,13 +66,25 @@ public class Main
 			return;
 		}
 
-		if (vodSpotAL.size() != 1)
+		if (vodSpotAL.size() == 0)
 		{
 			System.out.println("Invalid argument: '-dir' has to be a directory for vods to read/write to");
 			return;
 		}
 
-		vodSpot = vodSpotAL.get(0);
+		for (String s: vodSpotAL){
+			s = s.trim();
+			s = s.replace("\"", "");
+			if (vodSpot.isEmpty())
+			{
+				vodSpot = s;
+			}
+			else
+			{
+				vodSpot += " " + s;
+			}
+		}
+
 		if (!vodSpot.endsWith(File.separator))
 		{
 			vodSpot += File.separator;
